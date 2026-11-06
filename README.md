@@ -39,3 +39,4 @@ postman/orders.postman_collection.json   колекція Orders API (8 запи
 | Без токена / підроблений токен / без `Bearer` | 401 | `{ "code": "UNAUTHORIZED" }` |
 
 Відповідь має заголовок `Cache-Control: no-store`. Замовлення інших користувачів не враховуються.
+# lab-5
