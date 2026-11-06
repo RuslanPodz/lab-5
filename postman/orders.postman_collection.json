@@ -1,0 +1,356 @@
+{
+  "info": {
+    "_postman_id": "6f1d2b0e-5a0c-4f38-9a51-1b7c2f0d9e11",
+    "name": "Orders API",
+    "description": "ЛР 5. Сервіс замовлень + варіант 11 (GET /orders/stats)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('token', pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"bob@example.com\",\n  \"password\": \"Secret123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Get stats (before)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('JSON і Cache-Control: no-store', () => {",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store');",
+              "});",
+              "const stats = pm.response.json();",
+              "pm.test('лише поля count і totalSum', () => {",
+              "  pm.expect(stats).to.have.all.keys('count', 'totalSum');",
+              "  pm.expect(stats.count).to.be.a('number');",
+              "  pm.expect(stats.totalSum).to.be.a('number');",
+              "});",
+              "// сервер Postman зберігає стан між запусками, тому запам'ятовуємо базу",
+              "pm.collectionVariables.set('baseCount', stats.count);",
+              "pm.collectionVariables.set('baseSum', stats.totalSum);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "stats"
+          ]
+        },
+        "description": "Варіант 11. Базові значення статистики перед створенням замовлення."
+      }
+    },
+    {
+      "name": "Create order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 201', () => pm.response.to.have.status(201));",
+              "pm.test('сума з доставкою', () => {",
+              "  pm.expect(pm.response.json().total).to.eql(560);",
+              "});",
+              "pm.test('заголовок Location', () => {",
+              "  pm.expect(pm.response.headers.get('Location')).to.eql('/orders/' + pm.response.json().id);",
+              "});",
+              "pm.collectionVariables.set('orderId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"sku\": \"SKU-A\",\n      \"price\": 500,\n      \"qty\": 1\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Get order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('те саме замовлення', () => {",
+              "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('orderId'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get stats (after create)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const base = { count: Number(pm.collectionVariables.get('baseCount')), sum: Number(pm.collectionVariables.get('baseSum')) };",
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('count збільшився на 1', () => {",
+              "  pm.expect(pm.response.json().count).to.eql(base.count + 1);",
+              "});",
+              "pm.test('totalSum збільшився на 560', () => {",
+              "  pm.expect(pm.response.json().totalSum).to.eql(Math.round((base.sum + 560) * 100) / 100);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "stats"
+          ]
+        },
+        "description": "Варіант 11. Побічний ефект створення."
+      }
+    },
+    {
+      "name": "Delete order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 204', () => pm.response.to.have.status(204));",
+              "pm.test('без тіла', () => pm.expect(pm.response.text()).to.eql(''));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get stats (after delete)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('статистика повернулася до базової', () => {",
+              "  const stats = pm.response.json();",
+              "  pm.expect(stats.count).to.eql(Number(pm.collectionVariables.get('baseCount')));",
+              "  pm.expect(stats.totalSum).to.eql(Number(pm.collectionVariables.get('baseSum')));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "stats"
+          ]
+        },
+        "description": "Варіант 11. Побічний ефект видалення."
+      }
+    },
+    {
+      "name": "Get stats without token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 401', () => pm.response.to.have.status(401));",
+              "pm.test('код UNAUTHORIZED', () => {",
+              "  pm.expect(pm.response.json().code).to.eql('UNAUTHORIZED');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders/stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "stats"
+          ]
+        },
+        "description": "Варіант 11. Доступ без токена."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "baseCount",
+      "value": ""
+    },
+    {
+      "key": "baseSum",
+      "value": ""
+    }
+  ]
+}
