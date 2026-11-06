@@ -1,0 +1,21 @@
+{
+  "name": "qa-api-lab",
+  "version": "1.0.0",
+  "description": "ЛР 5. Автоматизація тестування REST API: Supertest, JSON Schema, Postman і Newman (варіант 11)",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "newman": "newman run postman/orders.postman_collection.json --reporters cli,junit --reporter-junit-export results/newman.xml"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "newman": "^6.2.1",
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
+  }
+}
