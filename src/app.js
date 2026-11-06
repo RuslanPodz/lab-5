@@ -74,6 +74,14 @@ export function createApp() {
     res.json(mine.map(toPublic));
   });
 
+  // Варіант 11. Статистика замовлень поточного користувача.
+  // Маршрут оголошено ДО /orders/:id, інакше 'stats' буде сприйнято як id.
+  app.get('/orders/stats', (_req, res) => {
+    const mine = [...orders.values()].filter((o) => o.ownerId === res.locals.user.id);
+    const totalSum = round2(mine.reduce((s, o) => s + o.total, 0));
+    res.set('Cache-Control', 'no-store').json({ count: mine.length, totalSum });
+  });
+
   app.get('/orders/:id', (req, res) => {
     const order = orders.get(req.params.id);
     if (!order || order.ownerId !== res.locals.user.id) {
